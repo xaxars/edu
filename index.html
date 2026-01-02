@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Analitzador de Palades - Rem</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .main-panel {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .video-section {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .control-section {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .upload-area {
+            border: 2px dashed #00d4ff;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00ff88;
+        }
+
+        .upload-area.dragover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00ff88;
+        }
+
+        .upload-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .upload-btn {
+            width: 220px;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            touch-action: manipulation;
+        }
+
+        @media (min-width: 500px) {
+            .upload-buttons {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        #videoInput {
+            display: none;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            max-height: 450px;
+            background: #000;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .video-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-catch {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: #fff;
+        }
+
+        .btn-catch:hover {
+            background: linear-gradient(135deg, #ff8585, #ff6b6b);
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+            color: #000;
+        }
+
+        .btn-finish:hover {
+            background: linear-gradient(135deg, #5fded5, #4ecdc4);
+        }
+
+        .btn-recovery {
+            background: linear-gradient(135deg, #5c7cfa, #4263eb);
+            color: #fff;
+        }
+
+        .btn-recovery:hover {
+            background: linear-gradient(135deg, #748ffc, #5c7cfa);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: #000;
+            padding: 12px 25px;
+            font-size: 16px;
+        }
+
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .time-display {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3em;
+            color: #00ff88;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .frame-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            color: #00d4ff;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .marker-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .marker-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .marker-row:last-child {
+            border-bottom: none;
+        }
+
+        .marker-label {
+            font-weight: 600;
+        }
+
+        .marker-value {
+            font-family: 'Courier New', monospace;
+            color: #00ff88;
+        }
+
+        .marker-value.empty {
+            color: #666;
+        }
+
+        .stats-box {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.1));
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+
+        .results-section {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            display: none;
+        }
+
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .frame-card {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .frame-card.key-frame {
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .frame-card canvas {
+            width: 100%;
+            display: block;
+        }
+
+        .frame-info {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .frame-title {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .frame-time {
+            font-size: 0.85em;
+            color: #888;
+            font-family: 'Courier New', monospace;
+        }
+
+        .phase-title {
+            color: #fff;
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+            padding-left: 15px;
+            border-left: 4px solid #00d4ff;
+        }
+
+        .phase-title.drive {
+            border-left-color: #ff6b6b;
+        }
+
+        .phase-title.recovery {
+            border-left-color: #4ecdc4;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .ios-hint {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Modal Galeria */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 95vw;
+            max-height: 95vh;
+            overflow: auto;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-header h3 {
+            color: #00d4ff;
+            margin: 0;
+        }
+
+        .modal-hint {
+            color: #4ecdc4;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .gallery-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        .gallery-container img {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 10px;
+            -webkit-touch-callout: default;
+            -webkit-user-select: auto;
+        }
+
+        .gallery-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .gallery-counter {
+            color: #00d4ff;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .gallery-info {
+            text-align: center;
+            margin-top: 10px;
+            color: #aaa;
+        }
+
+        .gallery-info .frame-label {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .gallery-info .frame-timestamp {
+            font-family: 'Courier New', monospace;
+            color: #00ff88;
+        }
+
+        .instructions {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .speed-control label {
+            color: #aaa;
+        }
+
+        .speed-control select {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .seek-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            touch-action: pan-x;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+        }
+
+        /* Millores tàctils per iPad */
+        .video-controls .btn,
+        .frame-nav .btn {
+            min-height: 44px;
+            min-width: 44px;
+            font-size: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .video-controls {
+                gap: 6px;
+            }
+            
+            .video-controls .btn {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+            
+            .frame-nav .btn {
+                padding: 10px 15px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 1000px) {
+            .main-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .icon {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚣 Analitzador de Palades</h1>
+        <p class="subtitle">Anàlisi biomecànic del rem - Extracció de fotogrames clau</p>
+
+        <div class="main-panel">
+            <div class="video-section">
+                <div class="upload-area" id="uploadArea">
+                    <p style="font-size: 1.3em; margin-bottom: 15px;">📹 Selecciona un vídeo</p>
+                    <div class="upload-buttons">
+                        <button class="btn btn-primary upload-btn" id="btnFromGallery">
+                            🎬 Des de la Galeria
+                        </button>
+                        <button class="btn btn-secondary upload-btn" id="btnFromCamera">
+                            📷 Gravar Nou Vídeo
+                        </button>
+                    </div>
+                    <p style="color: #888; margin-top: 15px; font-size: 0.9em;">Compatible amb iPad i dispositius mòbils</p>
+                    <input type="file" id="videoInputGallery" accept="video/*" style="display:none;">
+                    <input type="file" id="videoInputCamera" accept="video/*" capture="environment" style="display:none;">
+                </div>
+
+                <video id="videoPlayer" controls playsinline webkit-playsinline></video>
+                
+                <div id="changeVideoArea" style="display: none; text-align: center; margin-top: 10px;">
+                    <button class="btn btn-secondary" id="btnChangeVideo">📁 Canviar Vídeo</button>
+                </div>
+
+                <div class="time-display" id="timeDisplay">
+                    00:00.000 / 00:00.000 | Fotograma: 0
+                </div>
+
+                <input type="range" class="seek-slider" id="seekSlider" min="0" max="100" value="0" step="0.01">
+
+                <div class="video-controls">
+                    <button class="btn btn-secondary" id="btnPrevFrame" disabled>⏮ -1 Fotograma</button>
+                    <button class="btn btn-secondary" id="btnPlayPause" disabled>▶ Reproduir</button>
+                    <button class="btn btn-secondary" id="btnNextFrame" disabled>+1 Fotograma ⏭</button>
+                </div>
+
+                <div class="frame-nav">
+                    <button class="btn btn-secondary" id="btnPrev10" disabled>⏪ -10</button>
+                    <button class="btn btn-secondary" id="btnPrev5" disabled>-5</button>
+                    <button class="btn btn-secondary" id="btnNext5" disabled>+5</button>
+                    <button class="btn btn-secondary" id="btnNext10" disabled>+10 ⏩</button>
+                </div>
+
+                <div class="speed-control">
+                    <label>Velocitat:</label>
+                    <select id="playbackSpeed">
+                        <option value="0.1">0.1x</option>
+                        <option value="0.25">0.25x</option>
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="2">2x</option>
+                    </select>
+                    <label style="margin-left: 20px;">FPS estimat:</label>
+                    <select id="fpsSelect">
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="30" selected>30</option>
+                        <option value="50">50</option>
+                        <option value="60">60</option>
+                        <option value="120">120</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">📋 Instruccions</h3>
+                <div class="instructions">
+                    <ol>
+                        <li>Carrega un vídeo lateral del rem</li>
+                        <li>Navega fins al <strong>catch</strong> (atac): quan el capçal mòbil canvia de sentit per iniciar la passada</li>
+                        <li>Marca el punt amb el botó vermell 🔴</li>
+                        <li>Navega fins a la <strong>sortida</strong>: quan el capçal canvia de sentit iniciant la recuperació</li>
+                        <li>Marca el punt amb el botó verd 🟢</li>
+                        <li>Opcionalment, navega fins al <strong>fi de recuperació</strong> (següent catch) i marca amb el botó blau 🔵</li>
+                        <li>Genera els fotogrames!</li>
+                    </ol>
+                </div>
+
+                <h3 class="section-title">🎯 Marcar Punts Clau</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-catch" id="btnMarkCatch" disabled>
+                        🔴 Marcar CATCH (Atac)
+                    </button>
+                    <button class="btn btn-finish" id="btnMarkFinish" disabled>
+                        🟢 Marcar SORTIDA (Fi passada)
+                    </button>
+                    <button class="btn btn-recovery" id="btnMarkRecoveryEnd" disabled>
+                        🔵 Marcar FI RECUPERACIÓ
+                    </button>
+                </div>
+
+                <div class="marker-info" style="margin-top: 15px;">
+                    <div class="marker-row">
+                        <span class="marker-label">🔴 Catch:</span>
+                        <span class="marker-value empty" id="catchTime">No marcat</span>
+                    </div>
+                    <div class="marker-row">
+                        <span class="marker-label">🟢 Sortida:</span>
+                        <span class="marker-value empty" id="finishTime">No marcat</span>
+                    </div>
+                    <div class="marker-row">
+                        <span class="marker-label">🔵 Fi Recuperació:</span>
+                        <span class="marker-value empty" id="recoveryEndTime">Auto-calculat</span>
+                    </div>
+                </div>
+
+                <div class="stats-box" id="statsBox" style="display: none;">
+                    <h4 style="color: #00d4ff; margin-bottom: 10px;">📊 Estadístiques</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Temps Passada:</span>
+                        <span class="stat-value" id="driveTime">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Temps Recuperació:</span>
+                        <span class="stat-value" id="recoveryTime">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Ràtio (Rec/Pass):</span>
+                        <span class="stat-value" id="ratioValue">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cicle Total:</span>
+                        <span class="stat-value" id="cycleTime">-</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-generate" id="btnGenerate" disabled style="width: 100%;">
+                        ✨ Generar Fotogrames
+                    </button>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-secondary" id="btnReset" style="width: 100%;">
+                        🔄 Reiniciar Marcadors
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2 style="color: #00d4ff; margin-bottom: 20px;">📸 Fotogrames Extrets</h2>
+            
+            <h3 class="phase-title drive">Fase de Passada (Drive)</h3>
+            <div class="frames-grid" id="driveFrames"></div>
+
+            <h3 class="phase-title recovery">Fase de Recuperació (Recovery)</h3>
+            <div class="frames-grid" id="recoveryFrames"></div>
+
+            <div class="export-section">
+                <button class="btn btn-primary" id="btnExportZip">
+                    📦 Descarregar ZIP
+                </button>
+                <button class="btn btn-secondary" id="btnOpenGallery" style="margin-left: 10px;">
+                    🖼️ Obrir Galeria
+                </button>
+                <button class="btn btn-secondary" id="btnExportReport" style="margin-left: 10px;">
+                    📄 Generar Informe
+                </button>
+                <p class="ios-hint">💡 iPad/iPhone: Obre la galeria i mantén premuda cada imatge per guardar-la</p>
+            </div>
+        </div>
+
+        <!-- Modal Galeria per iPad -->
+        <div class="modal-overlay" id="galleryModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🖼️ Galeria de Fotogrames</h3>
+                    <button class="btn btn-secondary modal-close" id="btnCloseGallery">✕ Tancar</button>
+                </div>
+                <p class="modal-hint">Mantén premuda la imatge per guardar-la al teu dispositiu</p>
+                <div class="gallery-container" id="galleryContainer"></div>
+                <div class="gallery-nav">
+                    <button class="btn btn-secondary" id="btnGalleryPrev">◀ Anterior</button>
+                    <span class="gallery-counter" id="galleryCounter">1 / 10</span>
+                    <button class="btn btn-secondary" id="btnGalleryNext">Següent ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSZip library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        // Elements DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const btnFromGallery = document.getElementById('btnFromGallery');
+        const btnFromCamera = document.getElementById('btnFromCamera');
+        const videoInputGallery = document.getElementById('videoInputGallery');
+        const videoInputCamera = document.getElementById('videoInputCamera');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const seekSlider = document.getElementById('seekSlider');
+        const playbackSpeed = document.getElementById('playbackSpeed');
+        const fpsSelect = document.getElementById('fpsSelect');
+
+        // Botons
+        const btnPlayPause = document.getElementById('btnPlayPause');
+        const btnPrevFrame = document.getElementById('btnPrevFrame');
+        const btnNextFrame = document.getElementById('btnNextFrame');
+        const btnPrev5 = document.getElementById('btnPrev5');
+        const btnNext5 = document.getElementById('btnNext5');
+        const btnPrev10 = document.getElementById('btnPrev10');
+        const btnNext10 = document.getElementById('btnNext10');
+        const btnMarkCatch = document.getElementById('btnMarkCatch');
+        const btnMarkFinish = document.getElementById('btnMarkFinish');
+        const btnMarkRecoveryEnd = document.getElementById('btnMarkRecoveryEnd');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnReset = document.getElementById('btnReset');
+        const btnExportZip = document.getElementById('btnExportZip');
+        const btnOpenGallery = document.getElementById('btnOpenGallery');
+        const btnExportReport = document.getElementById('btnExportReport');
+        const galleryModal = document.getElementById('galleryModal');
+        const galleryContainer = document.getElementById('galleryContainer');
+        const galleryCounter = document.getElementById('galleryCounter');
+        const btnCloseGallery = document.getElementById('btnCloseGallery');
+        const btnGalleryPrev = document.getElementById('btnGalleryPrev');
+        const btnGalleryNext = document.getElementById('btnGalleryNext');
+
+        // Display elements
+        const catchTimeEl = document.getElementById('catchTime');
+        const finishTimeEl = document.getElementById('finishTime');
+        const recoveryEndTimeEl = document.getElementById('recoveryEndTime');
+        const statsBox = document.getElementById('statsBox');
+        const driveTimeEl = document.getElementById('driveTime');
+        const recoveryTimeEl = document.getElementById('recoveryTime');
+        const ratioValueEl = document.getElementById('ratioValue');
+        const cycleTimeEl = document.getElementById('cycleTime');
+        const resultsSection = document.getElementById('resultsSection');
+        const driveFrames = document.getElementById('driveFrames');
+        const recoveryFrames = document.getElementById('recoveryFrames');
+
+        // State
+        let catchMarker = null;
+        let finishMarker = null;
+        let recoveryEndMarker = null;
+        let generatedFrames = [];
+
+        // FPS
+        function getFPS() {
+            return parseInt(fpsSelect.value);
+        }
+
+        function getFrameDuration() {
+            return 1 / getFPS();
+        }
+
+        // Upload handlers - iPad optimitzat
+        btnFromGallery.addEventListener('click', (e) => {
+            e.stopPropagation();
+            videoInputGallery.click();
+        });
+        
+        btnFromCamera.addEventListener('click', (e) => {
+            e.stopPropagation();
+            videoInputCamera.click();
+        });
+
+        // Drag & drop per desktop (encara funcional)
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                loadVideo(file);
+            }
+        });
+        
+        videoInputGallery.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                loadVideo(e.target.files[0]);
+            }
+        });
+        
+        videoInputCamera.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                loadVideo(e.target.files[0]);
+            }
+        });
+
+        function loadVideo(file) {
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoPlayer.style.display = 'block';
+            uploadArea.style.display = 'none';
+            document.getElementById('changeVideoArea').style.display = 'block';
+            enableControls();
+            
+            // Reset markers quan es carrega un nou vídeo
+            btnReset.click();
+        }
+        
+        // Canviar vídeo
+        document.getElementById('btnChangeVideo').addEventListener('click', () => {
+            videoInputGallery.click();
+        });
+
+        function enableControls() {
+            btnPlayPause.disabled = false;
+            btnPrevFrame.disabled = false;
+            btnNextFrame.disabled = false;
+            btnPrev5.disabled = false;
+            btnNext5.disabled = false;
+            btnPrev10.disabled = false;
+            btnNext10.disabled = false;
+            btnMarkCatch.disabled = false;
+            btnMarkFinish.disabled = false;
+            btnMarkRecoveryEnd.disabled = false;
+        }
+
+        // Video time update
+        videoPlayer.addEventListener('timeupdate', updateTimeDisplay);
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            seekSlider.max = videoPlayer.duration;
+            updateTimeDisplay();
+        });
+
+        function updateTimeDisplay() {
+            const current = videoPlayer.currentTime;
+            const duration = videoPlayer.duration || 0;
+            const fps = getFPS();
+            const frame = Math.floor(current * fps);
+            
+            timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)} | Fotograma: ${frame}`;
+            seekSlider.value = current;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+        }
+
+        // Seek slider
+        seekSlider.addEventListener('input', () => {
+            videoPlayer.currentTime = parseFloat(seekSlider.value);
+        });
+
+        // Playback speed
+        playbackSpeed.addEventListener('change', () => {
+            videoPlayer.playbackRate = parseFloat(playbackSpeed.value);
+        });
+
+        // Play/Pause
+        btnPlayPause.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+                btnPlayPause.textContent = '⏸ Pausa';
+            } else {
+                videoPlayer.pause();
+                btnPlayPause.textContent = '▶ Reproduir';
+            }
+        });
+
+        videoPlayer.addEventListener('play', () => {
+            btnPlayPause.textContent = '⏸ Pausa';
+        });
+
+        videoPlayer.addEventListener('pause', () => {
+            btnPlayPause.textContent = '▶ Reproduir';
+        });
+
+        // Frame navigation
+        function seekFrames(numFrames) {
+            videoPlayer.pause();
+            const frameDuration = getFrameDuration();
+            videoPlayer.currentTime = Math.max(0, Math.min(
+                videoPlayer.duration,
+                videoPlayer.currentTime + (numFrames * frameDuration)
+            ));
+        }
+
+        btnPrevFrame.addEventListener('click', () => seekFrames(-1));
+        btnNextFrame.addEventListener('click', () => seekFrames(1));
+        btnPrev5.addEventListener('click', () => seekFrames(-5));
+        btnNext5.addEventListener('click', () => seekFrames(5));
+        btnPrev10.addEventListener('click', () => seekFrames(-10));
+        btnNext10.addEventListener('click', () => seekFrames(10));
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    btnPlayPause.click();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    seekFrames(e.shiftKey ? -10 : -1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    seekFrames(e.shiftKey ? 10 : 1);
+                    break;
+                case 'c':
+                case 'C':
+                    if (!btnMarkCatch.disabled) btnMarkCatch.click();
+                    break;
+                case 'f':
+                case 'F':
+                    if (!btnMarkFinish.disabled) btnMarkFinish.click();
+                    break;
+                case 'r':
+                case 'R':
+                    if (!btnMarkRecoveryEnd.disabled) btnMarkRecoveryEnd.click();
+                    break;
+            }
+        });
+
+        // Mark catch
+        btnMarkCatch.addEventListener('click', () => {
+            catchMarker = videoPlayer.currentTime;
+            catchTimeEl.textContent = formatTime(catchMarker);
+            catchTimeEl.classList.remove('empty');
+            updateStats();
+        });
+
+        // Mark finish
+        btnMarkFinish.addEventListener('click', () => {
+            finishMarker = videoPlayer.currentTime;
+            finishTimeEl.textContent = formatTime(finishMarker);
+            finishTimeEl.classList.remove('empty');
+            updateStats();
+        });
+
+        // Mark recovery end
+        btnMarkRecoveryEnd.addEventListener('click', () => {
+            recoveryEndMarker = videoPlayer.currentTime;
+            recoveryEndTimeEl.textContent = formatTime(recoveryEndMarker);
+            recoveryEndTimeEl.classList.remove('empty');
+            updateStats();
+        });
+
+        // Update statistics
+        function updateStats() {
+            if (catchMarker !== null && finishMarker !== null) {
+                const driveTime = Math.abs(finishMarker - catchMarker);
+                
+                let recoveryDuration;
+                let isRecoveryEstimated = false;
+                
+                if (recoveryEndMarker !== null) {
+                    // Fi de recuperació marcat manualment
+                    recoveryDuration = Math.abs(recoveryEndMarker - finishMarker);
+                } else {
+                    // Estimar recuperació com a mateixa durada que passada
+                    recoveryEndMarker = finishMarker + driveTime;
+                    recoveryEndTimeEl.textContent = formatTime(recoveryEndMarker) + ' (estimat)';
+                    recoveryEndTimeEl.classList.remove('empty');
+                    recoveryDuration = driveTime;
+                    isRecoveryEstimated = true;
+                }
+                
+                const ratio = recoveryDuration / driveTime;
+                const totalCycle = driveTime + recoveryDuration;
+                
+                driveTimeEl.textContent = `${(driveTime * 1000).toFixed(0)} ms`;
+                recoveryTimeEl.textContent = `${(recoveryDuration * 1000).toFixed(0)} ms${isRecoveryEstimated ? ' (est.)' : ''}`;
+                ratioValueEl.textContent = ratio.toFixed(2);
+                cycleTimeEl.textContent = `${(totalCycle * 1000).toFixed(0)} ms`;
+                
+                statsBox.style.display = 'block';
+                btnGenerate.disabled = false;
+            }
+        }
+
+        // Reset markers
+        btnReset.addEventListener('click', () => {
+            catchMarker = null;
+            finishMarker = null;
+            recoveryEndMarker = null;
+            
+            catchTimeEl.textContent = 'No marcat';
+            catchTimeEl.classList.add('empty');
+            finishTimeEl.textContent = 'No marcat';
+            finishTimeEl.classList.add('empty');
+            recoveryEndTimeEl.textContent = 'Auto-calculat';
+            recoveryEndTimeEl.classList.add('empty');
+            
+            statsBox.style.display = 'none';
+            btnGenerate.disabled = true;
+            resultsSection.style.display = 'none';
+            
+            driveFrames.innerHTML = '';
+            recoveryFrames.innerHTML = '';
+            generatedFrames = [];
+        });
+
+        // Generate frames
+        btnGenerate.addEventListener('click', async () => {
+            if (catchMarker === null || finishMarker === null) return;
+            
+            generatedFrames = [];
+            driveFrames.innerHTML = '';
+            recoveryFrames.innerHTML = '';
+            
+            const startTime = Math.min(catchMarker, finishMarker);
+            const endTime = Math.max(catchMarker, finishMarker);
+            const driveDuration = endTime - startTime;
+            
+            // Calculate timestamps for drive phase (5 frames: catch + 3 intermediate + finish)
+            const driveTimestamps = [
+                { time: startTime, label: 'CATCH (Atac)', isKey: true },
+                { time: startTime + driveDuration * 0.25, label: 'Passada 25%', isKey: false },
+                { time: startTime + driveDuration * 0.5, label: 'Passada 50%', isKey: false },
+                { time: startTime + driveDuration * 0.75, label: 'Passada 75%', isKey: false },
+                { time: endTime, label: 'SORTIDA (Fi)', isKey: true }
+            ];
+            
+            // Calculate timestamps for recovery phase using actual recoveryEndMarker
+            const actualRecoveryEnd = recoveryEndMarker !== null ? recoveryEndMarker : endTime + driveDuration;
+            const recoveryDuration = actualRecoveryEnd - endTime;
+            
+            const recoveryTimestamps = [
+                { time: endTime, label: 'Inici Recuperació', isKey: true },
+                { time: endTime + recoveryDuration * 0.25, label: 'Recuperació 25%', isKey: false },
+                { time: endTime + recoveryDuration * 0.5, label: 'Recuperació 50%', isKey: false },
+                { time: endTime + recoveryDuration * 0.75, label: 'Recuperació 75%', isKey: false },
+                { time: actualRecoveryEnd, label: 'Fi Recuperació', isKey: true }
+            ];
+            
+            // Generate drive frames
+            for (const ts of driveTimestamps) {
+                if (ts.time <= videoPlayer.duration) {
+                    await captureFrame(ts.time, ts.label, ts.isKey, driveFrames, 'drive');
+                }
+            }
+            
+            // Generate recovery frames
+            for (const ts of recoveryTimestamps) {
+                if (ts.time <= videoPlayer.duration) {
+                    await captureFrame(ts.time, ts.label, ts.isKey, recoveryFrames, 'recovery');
+                }
+            }
+            
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        async function captureFrame(time, label, isKey, container, phase) {
+            return new Promise((resolve) => {
+                videoPlayer.currentTime = time;
+                
+                videoPlayer.addEventListener('seeked', function onSeeked() {
+                    videoPlayer.removeEventListener('seeked', onSeeked);
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = videoPlayer.videoWidth;
+                    canvas.height = videoPlayer.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(videoPlayer, 0, 0);
+                    
+                    const frameCard = document.createElement('div');
+                    frameCard.className = `frame-card${isKey ? ' key-frame' : ''}`;
+                    
+                    const displayCanvas = document.createElement('canvas');
+                    displayCanvas.width = canvas.width;
+                    displayCanvas.height = canvas.height;
+                    displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                    
+                    const frameInfo = document.createElement('div');
+                    frameInfo.className = 'frame-info';
+                    frameInfo.innerHTML = `
+                        <div class="frame-title">${label}</div>
+                        <div class="frame-time">${formatTime(time)}</div>
+                    `;
+                    
+                    frameCard.appendChild(displayCanvas);
+                    frameCard.appendChild(frameInfo);
+                    container.appendChild(frameCard);
+                    
+                    generatedFrames.push({
+                        canvas: canvas,
+                        time: time,
+                        label: label,
+                        phase: phase
+                    });
+                    
+                    resolve();
+                }, { once: true });
+            });
+        }
+
+        // Export ZIP (funciona millor a iOS)
+        btnExportZip.addEventListener('click', async () => {
+            if (generatedFrames.length === 0) return;
+            
+            const originalText = btnExportZip.innerHTML;
+            btnExportZip.innerHTML = '⏳ Generant ZIP...';
+            btnExportZip.disabled = true;
+            
+            try {
+                const zip = new JSZip();
+                const timestamp = new Date().toISOString().slice(0, 10);
+                
+                // Afegir cada fotograma al ZIP
+                for (let i = 0; i < generatedFrames.length; i++) {
+                    const frame = generatedFrames[i];
+                    const fileName = `${String(i + 1).padStart(2, '0')}_${frame.phase}_${frame.label.replace(/[^a-zA-Z0-9àáèéíòóúüç]/gi, '_')}.png`;
+                    
+                    // Convertir canvas a blob
+                    const dataUrl = frame.canvas.toDataURL('image/png');
+                    const base64 = dataUrl.split(',')[1];
+                    zip.file(fileName, base64, { base64: true });
+                }
+                
+                // Afegir informe
+                const report = generateReportText();
+                zip.file('informe_palada.txt', report);
+                
+                // Generar i descarregar ZIP
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `analisi_palada_${timestamp}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                console.error('Error generant ZIP:', error);
+                alert('Error generant el ZIP. Prova amb la galeria per guardar les imatges individualment.');
+            }
+            
+            btnExportZip.innerHTML = originalText;
+            btnExportZip.disabled = false;
+        });
+
+        // Galeria modal per iPad
+        let currentGalleryIndex = 0;
+
+        btnOpenGallery.addEventListener('click', () => {
+            if (generatedFrames.length === 0) return;
+            currentGalleryIndex = 0;
+            updateGalleryView();
+            galleryModal.classList.add('active');
+        });
+
+        btnCloseGallery.addEventListener('click', () => {
+            galleryModal.classList.remove('active');
+        });
+
+        galleryModal.addEventListener('click', (e) => {
+            if (e.target === galleryModal) {
+                galleryModal.classList.remove('active');
+            }
+        });
+
+        btnGalleryPrev.addEventListener('click', () => {
+            if (currentGalleryIndex > 0) {
+                currentGalleryIndex--;
+                updateGalleryView();
+            }
+        });
+
+        btnGalleryNext.addEventListener('click', () => {
+            if (currentGalleryIndex < generatedFrames.length - 1) {
+                currentGalleryIndex++;
+                updateGalleryView();
+            }
+        });
+
+        function updateGalleryView() {
+            const frame = generatedFrames[currentGalleryIndex];
+            const imgDataUrl = frame.canvas.toDataURL('image/png');
+            
+            galleryContainer.innerHTML = `
+                <div>
+                    <img src="${imgDataUrl}" alt="${frame.label}">
+                    <div class="gallery-info">
+                        <div class="frame-label">${frame.label}</div>
+                        <div class="frame-timestamp">${formatTime(frame.time)} | ${frame.phase === 'drive' ? 'Passada' : 'Recuperació'}</div>
+                    </div>
+                </div>
+            `;
+            
+            galleryCounter.textContent = `${currentGalleryIndex + 1} / ${generatedFrames.length}`;
+            
+            btnGalleryPrev.disabled = currentGalleryIndex === 0;
+            btnGalleryNext.disabled = currentGalleryIndex === generatedFrames.length - 1;
+        }
+
+        // Swipe support per galeria
+        let touchStartX = 0;
+        galleryContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        galleryContainer.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > 50) {
+                if (diff > 0 && currentGalleryIndex < generatedFrames.length - 1) {
+                    currentGalleryIndex++;
+                    updateGalleryView();
+                } else if (diff < 0 && currentGalleryIndex > 0) {
+                    currentGalleryIndex--;
+                    updateGalleryView();
+                }
+            }
+        }, { passive: true });
+
+        // Generar text de l'informe (reutilitzable)
+        function generateReportText() {
+            const driveTime = Math.abs(finishMarker - catchMarker);
+            const isRecoveryEstimated = recoveryEndTimeEl.textContent.includes('estimat');
+            const actualRecoveryEnd = recoveryEndMarker !== null ? recoveryEndMarker : finishMarker + driveTime;
+            const recoveryTime = Math.abs(actualRecoveryEnd - finishMarker);
+            
+            return `
+INFORME D'ANÀLISI DE PALADA
+============================
+Data: ${new Date().toLocaleDateString('ca-ES')}
+Hora: ${new Date().toLocaleTimeString('ca-ES')}
+
+MARCADORS TEMPORALS
+-------------------
+Catch (Atac): ${formatTime(catchMarker)}
+Sortida (Fi passada): ${formatTime(finishMarker)}
+Fi Recuperació: ${formatTime(actualRecoveryEnd)}${isRecoveryEstimated ? ' (estimat)' : ' (marcat)'}
+
+DURADES
+-------
+Temps de Passada: ${(driveTime * 1000).toFixed(0)} ms
+Temps de Recuperació: ${(recoveryTime * 1000).toFixed(0)} ms${isRecoveryEstimated ? ' (estimat)' : ''}
+Cicle Total: ${((driveTime + recoveryTime) * 1000).toFixed(0)} ms
+Ràtio Recuperació/Passada: ${(recoveryTime / driveTime).toFixed(2)}
+
+FOTOGRAMES GENERATS
+-------------------
+Fase Passada: 5 fotogrames (Catch, 25%, 50%, 75%, Sortida)
+Fase Recuperació: 5 fotogrames (Inici, 25%, 50%, 75%, Fi)
+
+NOTES
+-----
+${isRecoveryEstimated ? '- El temps de recuperació és estimat igual al temps de passada\n- Per a una anàlisi més precisa, marqueu manualment el fi de recuperació' : '- Tots els marcadors han estat definits manualment'}
+
+============================
+Generat amb Analitzador de Palades v1.0
+            `.trim();
+        }
+
+        // Export report
+        btnExportReport.addEventListener('click', () => {
+            const report = generateReportText();
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = `informe_palada_${new Date().toISOString().slice(0, 10)}.txt`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        });
+    </script>
+</body>
+</html>
