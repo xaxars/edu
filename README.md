@@ -126,7 +126,7 @@ Les contribucions són benvingudes! Si tens suggeriments o trobes errors:
 
 Aquest projecte està sota la llicència MIT. Consulta el fitxer [LICENSE](LICENSE) per a més detalls.
 
-## 👤 Autor
+## 👤 Autor: Edu
 
 Desenvolupat per a l'anàlisi tècnic del rem.
 
