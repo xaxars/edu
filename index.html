@@ -313,9 +313,27 @@
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
         }
 
+        .frame-media {
+            position: relative;
+        }
+
         .frame-card canvas {
             width: 100%;
             display: block;
+        }
+
+        .frame-overlay,
+        .gallery-overlay {
+            position: absolute;
+            left: var(--overlay-x, 50%);
+            top: var(--overlay-y, 10%);
+            font-size: var(--overlay-size, 24px);
+            color: #fff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            pointer-events: none;
+            letter-spacing: 0.5px;
         }
 
         .frame-info {
@@ -354,6 +372,39 @@
         .export-section {
             margin-top: 20px;
             text-align: center;
+        }
+
+        .export-controls {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .export-control {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .export-control label {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .export-control input[type="number"] {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+        }
+
+        .gallery-media {
+            position: relative;
+            display: inline-block;
         }
 
         .ios-hint {
@@ -714,6 +765,25 @@
             <div class="frames-grid" id="recoveryFrames"></div>
 
             <div class="export-section">
+                <div class="export-controls">
+                    <div class="export-control">
+                        <label for="overlaySizeRange">Mida del text (px)</label>
+                        <input type="number" id="overlaySizeNumber" min="12" max="72" step="1" value="24">
+                    </div>
+                    <input type="range" id="overlaySizeRange" min="12" max="72" value="24" step="1">
+
+                    <div class="export-control">
+                        <label for="overlayXRange">Posició X (%)</label>
+                        <input type="number" id="overlayXNumber" min="0" max="100" step="1" value="50">
+                    </div>
+                    <input type="range" id="overlayXRange" min="0" max="100" value="50" step="1">
+
+                    <div class="export-control">
+                        <label for="overlayYRange">Posició Y (%)</label>
+                        <input type="number" id="overlayYNumber" min="0" max="100" step="1" value="10">
+                    </div>
+                    <input type="range" id="overlayYRange" min="0" max="100" value="10" step="1">
+                </div>
                 <button class="btn btn-primary" id="btnExportZip">
                     📦 Descarregar ZIP
                 </button>
@@ -783,6 +853,12 @@
         const btnCloseGallery = document.getElementById('btnCloseGallery');
         const btnGalleryPrev = document.getElementById('btnGalleryPrev');
         const btnGalleryNext = document.getElementById('btnGalleryNext');
+        const overlaySizeRange = document.getElementById('overlaySizeRange');
+        const overlaySizeNumber = document.getElementById('overlaySizeNumber');
+        const overlayXRange = document.getElementById('overlayXRange');
+        const overlayXNumber = document.getElementById('overlayXNumber');
+        const overlayYRange = document.getElementById('overlayYRange');
+        const overlayYNumber = document.getElementById('overlayYNumber');
 
         // Display elements
         const catchTimeEl = document.getElementById('catchTime');
@@ -802,6 +878,11 @@
         let finishMarker = null;
         let recoveryEndMarker = null;
         let generatedFrames = [];
+        const timestampOptions = {
+            xPercent: 0.5,
+            yPercent: 0.1,
+            size: 24
+        };
 
         // FPS
         function getFPS() {
@@ -811,6 +892,56 @@
         function getFrameDuration() {
             return 1 / getFPS();
         }
+
+        function applyOverlayStyles(element) {
+            element.style.setProperty('--overlay-x', `${timestampOptions.xPercent * 100}%`);
+            element.style.setProperty('--overlay-y', `${timestampOptions.yPercent * 100}%`);
+            element.style.setProperty('--overlay-size', `${timestampOptions.size}px`);
+        }
+
+        function updateAllOverlays() {
+            document.querySelectorAll('.frame-overlay, .gallery-overlay').forEach((overlay) => {
+                applyOverlayStyles(overlay);
+            });
+        }
+
+        function syncOverlayControls(rangeInput, numberInput, formatter, onUpdate) {
+            rangeInput.addEventListener('input', () => {
+                numberInput.value = formatter(rangeInput.value);
+                onUpdate(parseFloat(rangeInput.value));
+            });
+
+            numberInput.addEventListener('input', () => {
+                const value = parseFloat(numberInput.value);
+                if (Number.isNaN(value)) return;
+                rangeInput.value = formatter(value);
+                onUpdate(value);
+            });
+        }
+
+        syncOverlayControls(overlaySizeRange, overlaySizeNumber, (value) => value, (value) => {
+            timestampOptions.size = Math.max(12, Math.min(72, value));
+            updateAllOverlays();
+            if (galleryModal.classList.contains('active')) {
+                updateGalleryView();
+            }
+        });
+
+        syncOverlayControls(overlayXRange, overlayXNumber, (value) => value, (value) => {
+            timestampOptions.xPercent = Math.max(0, Math.min(100, value)) / 100;
+            updateAllOverlays();
+            if (galleryModal.classList.contains('active')) {
+                updateGalleryView();
+            }
+        });
+
+        syncOverlayControls(overlayYRange, overlayYNumber, (value) => value, (value) => {
+            timestampOptions.yPercent = Math.max(0, Math.min(100, value)) / 100;
+            updateAllOverlays();
+            if (galleryModal.classList.contains('active')) {
+                updateGalleryView();
+            }
+        });
 
         // Upload handlers - iPad optimitzat
         btnFromGallery.addEventListener('click', (e) => {
@@ -904,6 +1035,28 @@
             const secs = Math.floor(seconds % 60);
             const ms = Math.floor((seconds % 1) * 1000);
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+        }
+
+        function renderTimestampedCanvas(sourceCanvas, time) {
+            const renderedCanvas = document.createElement('canvas');
+            renderedCanvas.width = sourceCanvas.width;
+            renderedCanvas.height = sourceCanvas.height;
+            const ctx = renderedCanvas.getContext('2d');
+            ctx.drawImage(sourceCanvas, 0, 0);
+
+            const x = renderedCanvas.width * timestampOptions.xPercent;
+            const y = renderedCanvas.height * timestampOptions.yPercent;
+            ctx.font = `${timestampOptions.size}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillText(formatTime(time), x, y);
+
+            return renderedCanvas;
         }
 
         // Seek slider
@@ -1134,6 +1287,17 @@
                     displayCanvas.width = canvas.width;
                     displayCanvas.height = canvas.height;
                     displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+                    const frameMedia = document.createElement('div');
+                    frameMedia.className = 'frame-media';
+
+                    const frameOverlay = document.createElement('div');
+                    frameOverlay.className = 'frame-overlay';
+                    frameOverlay.textContent = formatTime(time);
+                    applyOverlayStyles(frameOverlay);
+
+                    frameMedia.appendChild(displayCanvas);
+                    frameMedia.appendChild(frameOverlay);
                     
                     const frameInfo = document.createElement('div');
                     frameInfo.className = 'frame-info';
@@ -1142,7 +1306,7 @@
                         <div class="frame-time">${formatTime(time)}</div>
                     `;
                     
-                    frameCard.appendChild(displayCanvas);
+                    frameCard.appendChild(frameMedia);
                     frameCard.appendChild(frameInfo);
                     container.appendChild(frameCard);
                     
@@ -1176,7 +1340,8 @@
                     const fileName = `${String(i + 1).padStart(2, '0')}_${frame.phase}_${frame.label.replace(/[^a-zA-Z0-9àáèéíòóúüç]/gi, '_')}.png`;
                     
                     // Convertir canvas a blob
-                    const dataUrl = frame.canvas.toDataURL('image/png');
+                    const exportCanvas = renderTimestampedCanvas(frame.canvas, frame.time);
+                    const dataUrl = exportCanvas.toDataURL('image/png');
                     const base64 = dataUrl.split(',')[1];
                     zip.file(fileName, base64, { base64: true });
                 }
@@ -1246,13 +1411,21 @@
             
             galleryContainer.innerHTML = `
                 <div>
-                    <img src="${imgDataUrl}" alt="${frame.label}">
+                    <div class="gallery-media">
+                        <img src="${imgDataUrl}" alt="${frame.label}">
+                        <div class="gallery-overlay">${formatTime(frame.time)}</div>
+                    </div>
                     <div class="gallery-info">
                         <div class="frame-label">${frame.label}</div>
                         <div class="frame-timestamp">${formatTime(frame.time)} | ${frame.phase === 'drive' ? 'Passada' : 'Recuperació'}</div>
                     </div>
                 </div>
             `;
+
+            const galleryOverlay = galleryContainer.querySelector('.gallery-overlay');
+            if (galleryOverlay) {
+                applyOverlayStyles(galleryOverlay);
+            }
             
             galleryCounter.textContent = `${currentGalleryIndex + 1} / ${generatedFrames.length}`;
             
