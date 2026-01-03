@@ -318,6 +318,27 @@
             display: block;
         }
 
+        .frame-media {
+            position: relative;
+        }
+
+        .frame-overlay {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
         .frame-info {
             padding: 10px;
             text-align: center;
@@ -354,6 +375,22 @@
         .export-section {
             margin-top: 20px;
             text-align: center;
+        }
+
+        .export-options {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .export-options input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #00d4ff;
         }
 
         .ios-hint {
@@ -427,6 +464,28 @@
             border-radius: 10px;
             -webkit-touch-callout: default;
             -webkit-user-select: auto;
+        }
+
+        .gallery-frame {
+            position: relative;
+            display: inline-block;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+            white-space: nowrap;
         }
 
         .gallery-nav {
@@ -723,6 +782,10 @@
                 <button class="btn btn-secondary" id="btnExportReport" style="margin-left: 10px;">
                     📄 Generar Informe
                 </button>
+                <div class="export-options">
+                    <input type="checkbox" id="includeTimestamp">
+                    <label for="includeTimestamp">Incloure temps a les imatges descarregades</label>
+                </div>
                 <p class="ios-hint">💡 iPad/iPhone: Obre la galeria i mantén premuda cada imatge per guardar-la</p>
             </div>
         </div>
@@ -777,6 +840,7 @@
         const btnExportZip = document.getElementById('btnExportZip');
         const btnOpenGallery = document.getElementById('btnOpenGallery');
         const btnExportReport = document.getElementById('btnExportReport');
+        const includeTimestamp = document.getElementById('includeTimestamp');
         const galleryModal = document.getElementById('galleryModal');
         const galleryContainer = document.getElementById('galleryContainer');
         const galleryCounter = document.getElementById('galleryCounter');
@@ -904,6 +968,54 @@
             const secs = Math.floor(seconds % 60);
             const ms = Math.floor((seconds % 1) * 1000);
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+        }
+
+        function renderTimestampedCanvas(sourceCanvas, time) {
+            const outputCanvas = document.createElement('canvas');
+            outputCanvas.width = sourceCanvas.width;
+            outputCanvas.height = sourceCanvas.height;
+            const ctx = outputCanvas.getContext('2d');
+            ctx.drawImage(sourceCanvas, 0, 0);
+
+            const timestamp = formatTime(time);
+            const fontSize = Math.max(18, Math.round(outputCanvas.width * 0.035));
+            ctx.font = `600 ${fontSize}px "Courier New", monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const paddingX = Math.round(fontSize * 0.6);
+            const paddingY = Math.round(fontSize * 0.35);
+            const metrics = ctx.measureText(timestamp);
+            const textWidth = metrics.width;
+            const boxWidth = textWidth + paddingX * 2;
+            const boxHeight = fontSize + paddingY * 2;
+
+            const centerX = outputCanvas.width / 2;
+            const boxX = centerX - boxWidth / 2;
+            const boxY = outputCanvas.height - boxHeight - Math.round(fontSize * 0.6);
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.beginPath();
+            const radius = Math.max(6, Math.round(fontSize * 0.35));
+            ctx.moveTo(boxX + radius, boxY);
+            ctx.lineTo(boxX + boxWidth - radius, boxY);
+            ctx.quadraticCurveTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + radius);
+            ctx.lineTo(boxX + boxWidth, boxY + boxHeight - radius);
+            ctx.quadraticCurveTo(boxX + boxWidth, boxY + boxHeight, boxX + boxWidth - radius, boxY + boxHeight);
+            ctx.lineTo(boxX + radius, boxY + boxHeight);
+            ctx.quadraticCurveTo(boxX, boxY + boxHeight, boxX, boxY + boxHeight - radius);
+            ctx.lineTo(boxX, boxY + radius);
+            ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(timestamp, centerX, boxY + boxHeight / 2);
+            ctx.shadowBlur = 0;
+
+            return outputCanvas;
         }
 
         // Seek slider
@@ -1129,20 +1241,29 @@
                     
                     const frameCard = document.createElement('div');
                     frameCard.className = `frame-card${isKey ? ' key-frame' : ''}`;
-                    
+
+                    const frameMedia = document.createElement('div');
+                    frameMedia.className = 'frame-media';
+
                     const displayCanvas = document.createElement('canvas');
                     displayCanvas.width = canvas.width;
                     displayCanvas.height = canvas.height;
                     displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
-                    
+
+                    const frameOverlay = document.createElement('div');
+                    frameOverlay.className = 'frame-overlay';
+                    frameOverlay.textContent = formatTime(time);
+
                     const frameInfo = document.createElement('div');
                     frameInfo.className = 'frame-info';
                     frameInfo.innerHTML = `
                         <div class="frame-title">${label}</div>
                         <div class="frame-time">${formatTime(time)}</div>
                     `;
-                    
-                    frameCard.appendChild(displayCanvas);
+
+                    frameMedia.appendChild(displayCanvas);
+                    frameMedia.appendChild(frameOverlay);
+                    frameCard.appendChild(frameMedia);
                     frameCard.appendChild(frameInfo);
                     container.appendChild(frameCard);
                     
@@ -1175,8 +1296,11 @@
                     const frame = generatedFrames[i];
                     const fileName = `${String(i + 1).padStart(2, '0')}_${frame.phase}_${frame.label.replace(/[^a-zA-Z0-9àáèéíòóúüç]/gi, '_')}.png`;
                     
+                    const exportCanvas = includeTimestamp.checked
+                        ? renderTimestampedCanvas(frame.canvas, frame.time)
+                        : frame.canvas;
                     // Convertir canvas a blob
-                    const dataUrl = frame.canvas.toDataURL('image/png');
+                    const dataUrl = exportCanvas.toDataURL('image/png');
                     const base64 = dataUrl.split(',')[1];
                     zip.file(fileName, base64, { base64: true });
                 }
@@ -1240,13 +1364,28 @@
             }
         });
 
+        includeTimestamp.addEventListener('change', () => {
+            if (generatedFrames.length > 0 && galleryModal.classList.contains('active')) {
+                updateGalleryView();
+            }
+        });
+
         function updateGalleryView() {
             const frame = generatedFrames[currentGalleryIndex];
-            const imgDataUrl = frame.canvas.toDataURL('image/png');
+            const imgCanvas = includeTimestamp.checked
+                ? renderTimestampedCanvas(frame.canvas, frame.time)
+                : frame.canvas;
+            const imgDataUrl = imgCanvas.toDataURL('image/png');
+            const overlayHtml = includeTimestamp.checked
+                ? ''
+                : `<div class="gallery-overlay">${formatTime(frame.time)}</div>`;
             
             galleryContainer.innerHTML = `
                 <div>
-                    <img src="${imgDataUrl}" alt="${frame.label}">
+                    <div class="gallery-frame">
+                        <img src="${imgDataUrl}" alt="${frame.label}">
+                        ${overlayHtml}
+                    </div>
                     <div class="gallery-info">
                         <div class="frame-label">${frame.label}</div>
                         <div class="frame-timestamp">${formatTime(frame.time)} | ${frame.phase === 'drive' ? 'Passada' : 'Recuperació'}</div>
