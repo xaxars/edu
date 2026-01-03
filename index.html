@@ -318,6 +318,27 @@
             display: block;
         }
 
+        .frame-media {
+            position: relative;
+        }
+
+        .frame-overlay {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
         .frame-info {
             padding: 10px;
             text-align: center;
@@ -427,6 +448,28 @@
             border-radius: 10px;
             -webkit-touch-callout: default;
             -webkit-user-select: auto;
+        }
+
+        .gallery-frame {
+            position: relative;
+            display: inline-block;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+            white-space: nowrap;
         }
 
         .gallery-nav {
@@ -1129,20 +1172,29 @@
                     
                     const frameCard = document.createElement('div');
                     frameCard.className = `frame-card${isKey ? ' key-frame' : ''}`;
-                    
+
+                    const frameMedia = document.createElement('div');
+                    frameMedia.className = 'frame-media';
+
                     const displayCanvas = document.createElement('canvas');
                     displayCanvas.width = canvas.width;
                     displayCanvas.height = canvas.height;
                     displayCanvas.getContext('2d').drawImage(canvas, 0, 0);
-                    
+
+                    const frameOverlay = document.createElement('div');
+                    frameOverlay.className = 'frame-overlay';
+                    frameOverlay.textContent = formatTime(time);
+
                     const frameInfo = document.createElement('div');
                     frameInfo.className = 'frame-info';
                     frameInfo.innerHTML = `
                         <div class="frame-title">${label}</div>
                         <div class="frame-time">${formatTime(time)}</div>
                     `;
-                    
-                    frameCard.appendChild(displayCanvas);
+
+                    frameMedia.appendChild(displayCanvas);
+                    frameMedia.appendChild(frameOverlay);
+                    frameCard.appendChild(frameMedia);
                     frameCard.appendChild(frameInfo);
                     container.appendChild(frameCard);
                     
@@ -1246,7 +1298,10 @@
             
             galleryContainer.innerHTML = `
                 <div>
-                    <img src="${imgDataUrl}" alt="${frame.label}">
+                    <div class="gallery-frame">
+                        <img src="${imgDataUrl}" alt="${frame.label}">
+                        <div class="gallery-overlay">${formatTime(frame.time)}</div>
+                    </div>
                     <div class="gallery-info">
                         <div class="frame-label">${frame.label}</div>
                         <div class="frame-timestamp">${formatTime(frame.time)} | ${frame.phase === 'drive' ? 'Passada' : 'Recuperació'}</div>
